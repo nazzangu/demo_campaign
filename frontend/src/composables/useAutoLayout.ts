@@ -19,23 +19,10 @@ export function useAutoLayout() {
       if (n.type === 'ENTRY_CONDITION') connectedIds.add(n.id)
     })
 
-    // 결과 노드와 그 부모 채널 노드를 파악
-    const resultParent = new Map<string, string>() // resultId -> channelId
-    const channelResults = new Map<string, { success?: string; failure?: string }>()
-    edges.forEach((e) => {
-      const target = nodes.find((n) => n.id === e.target)
-      if (target && (target.type === 'RESULT_SUCCESS' || target.type === 'RESULT_FAILURE')) {
-        resultParent.set(e.target, e.source)
-        if (!channelResults.has(e.source)) channelResults.set(e.source, {})
-        const entry = channelResults.get(e.source)!
-        if (target.type === 'RESULT_SUCCESS') entry.success = e.target
-        else entry.failure = e.target
-      }
-    })
+    const isResultNode = (n: Node) =>
+      n.type === 'RESULT_SUCCESS' || n.type === 'RESULT_FAILURE'
 
-    // 결과 노드는 dagre에서 제외 (부모 기준으로 수동 배치)
-    const resultIds = new Set(resultParent.keys())
-    const mainNodes = nodes.filter((n) => connectedIds.has(n.id) && !resultIds.has(n.id))
+    const mainNodes = nodes.filter((n) => connectedIds.has(n.id))
     const orphanNodes = nodes.filter((n) => !connectedIds.has(n.id))
 
     const g = new dagre.graphlib.Graph()
@@ -49,14 +36,15 @@ export function useAutoLayout() {
     g.setDefaultEdgeLabel(() => ({}))
 
     mainNodes.forEach((node) => {
-      g.setNode(node.id, { width: NODE_WIDTH, height: NODE_HEIGHT })
+      const isResult = isResultNode(node)
+      g.setNode(node.id, {
+        width: isResult ? RESULT_WIDTH : NODE_WIDTH,
+        height: isResult ? RESULT_HEIGHT : NODE_HEIGHT,
+      })
     })
 
     edges.forEach((edge) => {
-      // 결과 노드로의 엣지는 제외
-      if (resultIds.has(edge.target)) return
-      if (connectedIds.has(edge.source) && connectedIds.has(edge.target) &&
-          !resultIds.has(edge.source)) {
+      if (connectedIds.has(edge.source) && connectedIds.has(edge.target)) {
         g.setEdge(edge.source, edge.target)
       }
     })
@@ -65,58 +53,105 @@ export function useAutoLayout() {
 
     const result: Node[] = mainNodes.map((node) => {
       const pos = g.node(node.id)
+      const isResult = isResultNode(node)
+      const w = isResult ? RESULT_WIDTH : NODE_WIDTH
+      const h = isResult ? RESULT_HEIGHT : NODE_HEIGHT
       return {
         ...node,
         position: {
-          x: Math.round(pos.x - NODE_WIDTH / 2),
-          y: Math.round(pos.y - NODE_HEIGHT / 2),
+          x: Math.round(pos.x - w / 2),
+          y: Math.round(pos.y - h / 2),
         },
       }
     })
 
-    // 결과 노드: 부모 채널 노드 중심 기준 좌우 대칭 (꺾은선 유지)
-    const SPREAD = 120
-    const RESULT_CENTER = RESULT_WIDTH / 2  // 65px
-
-    channelResults.forEach((pair, channelId) => {
-      const parent = result.find((n) => n.id === channelId)
-      if (!parent) return
-      const channelCenterX = parent.position.x + NODE_WIDTH / 2
-      const belowY = parent.position.y + NODE_HEIGHT + 100
-
-      if (pair.success) {
-        const sNode = nodes.find((n) => n.id === pair.success)
-        if (sNode) {
-          result.push({
-            ...sNode,
-            position: {
-              x: Math.round(channelCenterX - SPREAD - RESULT_CENTER),
-              y: belowY,
-            },
-          })
-        }
-      }
-      if (pair.failure) {
-        const fNode = nodes.find((n) => n.id === pair.failure)
-        if (fNode) {
-          result.push({
-            ...fNode,
-            position: {
-              x: Math.round(channelCenterX + SPREAD - RESULT_CENTER),
-              y: belowY,
-            },
-          })
-        }
+    // 같은 채널 노드의 성공/실패 결과 순서 보정 (성공=좌, 실패=우)
+    const channelResults = new Map<string, { success?: string; failure?: string }>()
+    edges.forEach((e) => {
+      const target = nodes.find((n) => n.id === e.target)
+      if (target && isResultNode(target)) {
+        if (!channelResults.has(e.source)) channelResults.set(e.source, {})
+        const entry = channelResults.get(e.source)!
+        if (target.type === 'RESULT_SUCCESS') entry.success = e.target
+        else entry.failure = e.target
       }
     })
 
-    // 결과 노드 중 부모가 없는 경우 (고립 결과)
-    resultIds.forEach((rid) => {
-      if (!result.find((n) => n.id === rid)) {
-        const node = nodes.find((n) => n.id === rid)
-        if (node) orphanNodes.push(node)
+    channelResults.forEach((pair) => {
+      if (!pair.success || !pair.failure) return
+      const sNode = result.find((n) => n.id === pair.success)
+      const fNode = result.find((n) => n.id === pair.failure)
+      if (!sNode || !fNode) return
+
+      // 성공이 실패보다 오른쪽에 있으면 x좌표 스왑
+      if (sNode.position.x > fNode.position.x) {
+        const tmpX = sNode.position.x
+        sNode.position = { ...sNode.position, x: fNode.position.x }
+        fNode.position = { ...fNode.position, x: tmpX }
       }
     })
+
+    // 브랜치 노드의 자식을 그룹 인덱스(sourceHandle) 순서대로 좌→우 재정렬
+    const branchNodes = mainNodes.filter(
+      (n) => n.type === 'BRANCH_USER' || n.type === 'BRANCH_EVENT',
+    )
+    for (const branchNode of branchNodes) {
+      const outEdges = edges
+        .filter((e) => e.source === branchNode.id)
+        .sort((a, b) => {
+          const ai = parseInt(a.sourceHandle?.replace('branch-', '') || '0', 10)
+          const bi = parseInt(b.sourceHandle?.replace('branch-', '') || '0', 10)
+          return ai - bi
+        })
+
+      if (outEdges.length < 2) continue
+
+      const childNodes = outEdges
+        .map((e) => result.find((n) => n.id === e.target))
+        .filter((n): n is Node => !!n)
+
+      if (childNodes.length < 2) continue
+
+      const sortedXPositions = childNodes
+        .map((n) => n.position.x)
+        .sort((a, b) => a - b)
+
+      function collectSubtree(nodeId: string, visited: Set<string>): string[] {
+        if (visited.has(nodeId)) return []
+        visited.add(nodeId)
+        const ids = [nodeId]
+        const childEdges = edges.filter(
+          (e) => e.source === nodeId && e.source !== branchNode.id,
+        )
+        for (const ce of childEdges) {
+          ids.push(...collectSubtree(ce.target, visited))
+        }
+        return ids
+      }
+
+      for (let i = 0; i < childNodes.length; i++) {
+        const child = childNodes[i]
+        const targetX = sortedXPositions[i]
+        const deltaX = targetX - child.position.x
+
+        if (deltaX === 0) continue
+
+        const visited = new Set<string>()
+        const siblingIds = new Set(childNodes.map((n) => n.id))
+        visited.add(branchNode.id)
+        siblingIds.forEach((sid) => {
+          if (sid !== child.id) visited.add(sid)
+        })
+
+        const subtreeIds = collectSubtree(child.id, visited)
+        for (const sid of subtreeIds) {
+          const sNode = result.find((n) => n.id === sid)
+          if (sNode) {
+            sNode.position = { ...sNode.position, x: sNode.position.x + deltaX }
+          }
+        }
+      }
+    }
 
     // 고립 노드
     if (orphanNodes.length) {

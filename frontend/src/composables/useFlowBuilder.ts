@@ -85,13 +85,16 @@ export function useFlowBuilder(
     const node = nodes.value.find((n) => n.id === nodeId)
     if (!node || node.type === 'ENTRY_CONDITION') return
 
-    // Collect connected child node IDs to delete (e.g. RESULT_SUCCESS/FAILURE)
+    // Collect connected child RESULT nodes to delete
+    // (only if they have no outgoing edges — i.e. no follow-up actions)
     const connectedEdges = edges.value.filter((e) => e.source === nodeId)
     const childIds = connectedEdges
       .map((e) => e.target)
       .filter((targetId) => {
         const child = nodes.value.find((n) => n.id === targetId)
-        return child && (child.type === 'RESULT_SUCCESS' || child.type === 'RESULT_FAILURE')
+        if (!child || (child.type !== 'RESULT_SUCCESS' && child.type !== 'RESULT_FAILURE')) return false
+        const hasFollowUp = edges.value.some((e) => e.source === targetId)
+        return !hasFollowUp
       })
 
     const removeIds = new Set([nodeId, ...childIds])
@@ -103,11 +106,11 @@ export function useFlowBuilder(
   }
 
   function updateNodeData(nodeId: string, data: Record<string, any>) {
-    const node = nodes.value.find((n) => n.id === nodeId)
-    if (node) {
-      node.data = { ...node.data, ...data }
-      isDirty.value = true
-    }
+    nodes.value = nodes.value.map((n) => {
+      if (n.id !== nodeId) return n
+      return { ...n, data: { ...n.data, ...data } }
+    })
+    isDirty.value = true
   }
 
   function getFlowGraphJson(): string {

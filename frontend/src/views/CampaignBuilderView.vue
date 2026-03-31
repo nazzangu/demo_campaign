@@ -257,6 +257,9 @@ onMounted(async () => {
     campaign.value = res.data.data
     if (campaign.value?.flowGraph) {
       loadFlowGraph(campaign.value.flowGraph)
+      // 로드 후 브랜치 엣지 라벨 동기화
+      syncBranchEdgeLabels()
+      isDirty.value = false
     }
     // 초기 스냅샷 저장
     setTimeout(() => { savedSnapshot = takeSnapshot() }, 200)
@@ -277,8 +280,35 @@ function handleDrop(event: DragEvent) {
   addNode(type, position)
 }
 
+function getBranchLabel(sourceId: string, sourceHandle: string | null | undefined): string | undefined {
+  if (!sourceHandle?.startsWith('branch-')) return undefined
+  const node = nodes.value.find((n) => n.id === sourceId)
+  if (!node || (!node.type?.startsWith('BRANCH_'))) return undefined
+  const branchIndex = parseInt(sourceHandle.replace('branch-', ''), 10)
+  const branches = node.data?.config?.branches || []
+  const branch = branches.find((b: any) => b.index === branchIndex)
+  return branch?.label
+}
+
+const BRANCH_COLORS = ['#E74C3C', '#F39C12', '#3498DB', '#2ECC71', '#9B59B6', '#1ABC9C']
+
+function getBranchEdgeStyle(sourceId: string, sourceHandle: string | null | undefined) {
+  if (!sourceHandle?.startsWith('branch-')) return {}
+  const node = nodes.value.find((n) => n.id === sourceId)
+  if (!node || !node.type?.startsWith('BRANCH_')) return {}
+  const branchIndex = parseInt(sourceHandle.replace('branch-', ''), 10)
+  const color = BRANCH_COLORS[(branchIndex - 1) % BRANCH_COLORS.length]
+  return {
+    labelStyle: { fill: color, fontWeight: 700, fontSize: '11px' },
+    labelBgStyle: { fill: '#fff', fillOpacity: 0.9 },
+    style: { stroke: color, strokeWidth: 2 },
+  }
+}
+
 function handleConnect(connection: Connection) {
   const edgeId = `edge-${connection.source}-${connection.target}`
+  const label = getBranchLabel(connection.source, connection.sourceHandle)
+  const edgeStyle = getBranchEdgeStyle(connection.source, connection.sourceHandle)
   edges.value = [
     ...edges.value,
     {
@@ -288,9 +318,29 @@ function handleConnect(connection: Connection) {
       sourceHandle: connection.sourceHandle ?? undefined,
       targetHandle: connection.targetHandle ?? undefined,
       type: 'smoothstep',
+      label,
+      ...edgeStyle,
     },
   ]
   markDirty()
+}
+
+function syncBranchEdgeLabels() {
+  let changed = false
+  edges.value = edges.value.map((e) => {
+    const label = getBranchLabel(e.source, e.sourceHandle)
+    if (label !== undefined && e.label !== label) {
+      changed = true
+      return { ...e, label, ...getBranchEdgeStyle(e.source, e.sourceHandle) }
+    }
+    // 기존 브랜치 엣지에 스타일이 없는 경우에도 적용
+    if (label !== undefined && !e.labelStyle) {
+      changed = true
+      return { ...e, ...getBranchEdgeStyle(e.source, e.sourceHandle) }
+    }
+    return e
+  })
+  if (changed) markDirty()
 }
 
 function handleNodeClick(event: any) {
@@ -388,6 +438,11 @@ function handleUpdateConfig(config: any) {
   if (!node) return
 
   updateNodeData(selectedNodeId.value, { config })
+
+  // 브랜치 노드 설정 변경 시 엣지 라벨 동기화
+  if (node.type?.startsWith('BRANCH_')) {
+    syncBranchEdgeLabels()
+  }
 }
 
 // ── Validation ──

@@ -3,6 +3,7 @@
     <Handle type="target" :position="Position.Top" />
     <span class="result-icon">{{ isSuccess ? '✅' : '❌' }}</span>
     <span class="result-label">{{ data.label }}</span>
+    <Handle type="source" :position="Position.Bottom" />
   </div>
 </template>
 

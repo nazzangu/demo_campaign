@@ -43,6 +43,7 @@ const menuItems = [
   { to: '/recommend', icon: '💡', label: '캠페인 추천' },
   { to: '/monitoring', icon: '🔍', label: '캠페인 모니터링' },
   { to: '/analytics', icon: '📊', label: '캠페인 성과 분석' },
+  { to: '/segments', icon: '🎯', label: '세그먼트 관리' },
   { to: '/templates', icon: '📝', label: '템플릿 관리' },
   { to: '/settings', icon: '⚙️', label: '설정 관리' },
 ]
