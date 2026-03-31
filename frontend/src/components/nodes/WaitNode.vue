@@ -38,7 +38,7 @@ function unitLabel(unit: string): string {
   border: 1px solid #fcd34d;
   border-left: 4px solid #f59e0b;
   border-radius: 12px;
-  min-width: 160px;
+  width: 250px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   overflow: hidden;
 }

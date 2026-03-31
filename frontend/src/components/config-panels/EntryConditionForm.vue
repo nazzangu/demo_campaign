@@ -43,17 +43,20 @@ const localConfig = reactive({
 
 watch(() => props.config, (val) => {
   if (val) {
-    Object.assign(localConfig, {
-      audienceType: val.audienceType || 'ALL_USERS',
-      events: val.events || [],
-      period: { start: val.period?.start || null, end: val.period?.end || null },
-      endCondition: val.endCondition || 'NONE',
-    })
+    localConfig.audienceType = val.audienceType || 'ALL_USERS'
+    localConfig.events = val.events || []
+    localConfig.period = { start: val.period?.start || null, end: val.period?.end || null }
+    localConfig.endCondition = val.endCondition || 'NONE'
   }
 }, { deep: true })
 
 function emitUpdate() {
-  emit('update', { ...localConfig, period: { ...localConfig.period } })
+  emit('update', {
+    audienceType: localConfig.audienceType,
+    events: localConfig.events,
+    period: { ...localConfig.period },
+    endCondition: localConfig.endCondition,
+  })
 }
 </script>
 

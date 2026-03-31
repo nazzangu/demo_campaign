@@ -21,6 +21,7 @@ const showNav = computed(() => route.path !== '/')
 
 const pageTitle = computed(() => {
   if (route.name === 'campaign-builder') return '캠페인 빌더'
+  if (route.name === 'campaign-ops') return '운영 현황'
   if (route.name === 'settings') return '설정 관리'
   return ''
 })

@@ -21,11 +21,18 @@
 .vue-flow__edge-path {
   stroke: #94a3b8;
   stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .vue-flow__edge.selected .vue-flow__edge-path {
   stroke: #2563eb;
   stroke-width: 3;
+}
+
+.vue-flow__edge-text {
+  font-size: 11px;
+  fill: #6b7280;
 }
 
 .vue-flow__handle {

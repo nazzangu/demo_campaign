@@ -11,7 +11,8 @@
         ⚠️ 설정을 완료해주세요
       </div>
       <div v-else class="configured">
-        ✅ 설정 완료
+        <div>✅ 설정 완료</div>
+        <div v-if="messageTitle" class="msg-title">{{ messageTitle }}</div>
       </div>
     </div>
     <Handle id="success" type="source" :position="Position.Bottom" :style="{ left: '30%' }" />
@@ -38,6 +39,12 @@ const storeChannel = computed(() => settingsStore.channels.find((c) => c.type ==
 const nodeColor = computed(() => storeChannel.value?.color || getNodeColor(props.type as NodeType))
 
 const nodeIcon = computed(() => storeChannel.value?.icon || '📨')
+
+const messageTitle = computed(() => {
+  const config = props.data?.config
+  if (!config) return ''
+  return config.title || config.name || ''
+})
 </script>
 
 <style scoped>
@@ -46,7 +53,7 @@ const nodeIcon = computed(() => storeChannel.value?.icon || '📨')
   border: 1px solid #e5e7eb;
   border-left: 4px solid;
   border-radius: 12px;
-  min-width: 200px;
+  width: 250px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   overflow: hidden;
 }
@@ -92,5 +99,14 @@ const nodeIcon = computed(() => storeChannel.value?.icon || '📨')
   background: #ecfdf5;
   padding: 6px 10px;
   border-radius: 6px;
+}
+
+.msg-title {
+  margin-top: 4px;
+  font-size: 11px;
+  color: #374151;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 </style>

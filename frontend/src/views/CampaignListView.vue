@@ -3,6 +3,7 @@
     <div class="list-header">
       <h1>캠페인 관리</h1>
       <div class="header-buttons">
+        <button class="btn-ops" @click="$router.push('/ops')">운영 현황</button>
         <button class="btn-settings" @click="$router.push('/settings')">설정 관리</button>
         <button class="btn-create" @click="createCampaign">+ 새 캠페인</button>
       </div>
@@ -70,7 +71,7 @@ function statusLabel(status: CampaignStatus): string {
     ACTIVE: '운영',
     PAUSED: '일시정지',
     COMPLETED: '완료',
-    ARCHIVED: '보관',
+    ARCHIVED: '폐기',
   }
   return labels[status]
 }
@@ -103,6 +104,21 @@ function formatDate(dateStr: string): string {
 .header-buttons {
   display: flex;
   gap: 8px;
+}
+
+.btn-ops {
+  padding: 10px 20px;
+  background: #111827;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-ops:hover {
+  background: #1f2937;
 }
 
 .btn-settings {

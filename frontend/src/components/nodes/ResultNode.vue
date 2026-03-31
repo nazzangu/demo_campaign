@@ -23,7 +23,9 @@ const resultClass = computed(() => isSuccess.value ? 'success' : 'failure')
 .result-node {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
+  width: 130px;
   padding: 8px 16px;
   border-radius: 20px;
   font-size: 13px;

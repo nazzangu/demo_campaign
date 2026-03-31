@@ -6,14 +6,20 @@
     </div>
     <div class="node-body">
       <div class="info-row">
-        <span class="info-label">👤 모든 사용자</span>
+        <span class="info-icon">👤</span>
+        <span class="info-label">{{ audienceLabel }}</span>
       </div>
       <div class="info-row" v-if="data.config?.period?.start">
-        <span class="info-label">📅 기간 시작: {{ data.config.period.start }}</span>
+        <span class="info-icon">📅</span>
+        <span class="info-label">시작: {{ data.config.period.start }}</span>
       </div>
-      <div class="info-row sub-section">
-        <span class="info-icon">🚪</span>
-        <span class="info-label">이탈 조건</span>
+      <div class="info-row" v-if="data.config?.endCondition === 'DATE' && data.config?.period?.end">
+        <span class="info-icon">🏁</span>
+        <span class="info-label">종료: {{ data.config.period.end }}</span>
+      </div>
+      <div class="info-row" v-else-if="data.config?.endCondition === 'NONE'">
+        <span class="info-icon">🏁</span>
+        <span class="info-label">종료 안함</span>
       </div>
     </div>
     <Handle type="source" :position="Position.Bottom" />
@@ -21,11 +27,16 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { Handle, Position } from '@vue-flow/core'
 
-defineProps<{
+const props = defineProps<{
   data: any
 }>()
+
+const audienceLabel = computed(() => {
+  return props.data.config?.audienceType === 'SEGMENT' ? '세그먼트' : '모든 사용자'
+})
 </script>
 
 <style scoped>
@@ -33,7 +44,7 @@ defineProps<{
   background: #fff;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
-  min-width: 240px;
+  width: 250px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   overflow: hidden;
 }
@@ -54,10 +65,10 @@ defineProps<{
 }
 
 .node-body {
-  padding: 12px 14px;
+  padding: 10px 14px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .info-row {
@@ -68,13 +79,8 @@ defineProps<{
   color: #4b5563;
 }
 
-.sub-section {
-  margin-top: 4px;
-  padding-top: 8px;
-  border-top: 1px dashed #e5e7eb;
-}
-
 .info-icon {
   font-size: 12px;
+  flex-shrink: 0;
 }
 </style>

@@ -37,18 +37,21 @@ export function useFlowBuilder(
       const successId = nextId()
       const failureId = nextId()
 
+      // 채널 노드 중심 기준 좌우 대칭 배치 (꺾은선 유지)
+      const channelCenter = position.x + 125
+      const spread = 120
       nodes.value = [
         ...nodes.value,
         {
           id: successId,
           type: 'RESULT_SUCCESS',
-          position: { x: position.x - 60, y: position.y + 150 },
+          position: { x: channelCenter - spread - 65, y: position.y + 180 },
           data: getDefaultNodeData('RESULT_SUCCESS'),
         },
         {
           id: failureId,
           type: 'RESULT_FAILURE',
-          position: { x: position.x + 140, y: position.y + 150 },
+          position: { x: channelCenter + spread - 65, y: position.y + 180 },
           data: getDefaultNodeData('RESULT_FAILURE'),
         },
       ]

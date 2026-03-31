@@ -14,6 +14,11 @@ const router = createRouter({
       component: () => import('@/views/CampaignBuilderView.vue'),
     },
     {
+      path: '/ops',
+      name: 'campaign-ops',
+      component: () => import('@/views/CampaignOpsView.vue'),
+    },
+    {
       path: '/settings',
       name: 'settings',
       component: () => import('@/views/SettingsView.vue'),
