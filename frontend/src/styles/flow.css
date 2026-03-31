@@ -1,0 +1,53 @@
+.vue-flow {
+  background-color: #fafbfc;
+  background-image:
+    radial-gradient(circle, #ddd 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.vue-flow__node {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+.vue-flow__node.selected {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+  border-radius: 12px;
+}
+
+.vue-flow__edge-path {
+  stroke: #94a3b8;
+  stroke-width: 2;
+}
+
+.vue-flow__edge.selected .vue-flow__edge-path {
+  stroke: #2563eb;
+  stroke-width: 3;
+}
+
+.vue-flow__handle {
+  width: 10px;
+  height: 10px;
+  background: #94a3b8;
+  border: 2px solid #fff;
+  border-radius: 50%;
+}
+
+.vue-flow__handle:hover {
+  background: #2563eb;
+}
+
+.vue-flow__minimap {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.vue-flow__controls {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}

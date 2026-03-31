@@ -1,0 +1,17 @@
+/* Node base styles are handled in scoped component styles */
+/* This file provides global overrides if needed */
+
+.vue-flow__node-ENTRY_CONDITION,
+.vue-flow__node-CHANNEL_PUSH,
+.vue-flow__node-CHANNEL_KAKAO,
+.vue-flow__node-CHANNEL_BRAND_FREE,
+.vue-flow__node-CHANNEL_BRAND_TEMPLATE,
+.vue-flow__node-CHANNEL_SMS,
+.vue-flow__node-CHANNEL_WEBHOOK,
+.vue-flow__node-BRANCH_USER,
+.vue-flow__node-BRANCH_EVENT,
+.vue-flow__node-WAIT,
+.vue-flow__node-RESULT_SUCCESS,
+.vue-flow__node-RESULT_FAILURE {
+  cursor: pointer;
+}
