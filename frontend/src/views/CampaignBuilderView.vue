@@ -71,6 +71,26 @@
       </div>
     </Transition>
 
+    <!-- 노드 삭제 확인 -->
+    <Transition name="fade">
+      <div v-if="showDeleteConfirm" class="validation-overlay" @click.self="showDeleteConfirm = false">
+        <div class="validation-modal">
+          <div class="validation-header">
+            <span class="validation-icon delete-icon">!</span>
+            <h3>노드 삭제</h3>
+            <button class="validation-close" @click="showDeleteConfirm = false">✕</button>
+          </div>
+          <div class="validation-body">
+            <p class="validation-desc">{{ deleteTargetLabel }} 노드를 삭제하시겠습니까?</p>
+          </div>
+          <div class="validation-footer">
+            <button class="btn-cancel" @click="showDeleteConfirm = false">취소</button>
+            <button class="btn-confirm btn-delete" @click="confirmDeleteNode">삭제</button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
     <!-- 유효성 검증 알림 -->
     <Transition name="fade">
       <div v-if="showValidation" class="validation-overlay" @click.self="dismissValidation">
@@ -115,6 +135,7 @@ import ChannelNode from '@/components/nodes/ChannelNode.vue'
 import BranchNode from '@/components/nodes/BranchNode.vue'
 import WaitNode from '@/components/nodes/WaitNode.vue'
 import ResultNode from '@/components/nodes/ResultNode.vue'
+import RewardNode from '@/components/nodes/RewardNode.vue'
 
 const nodeTypes = {
   ENTRY_CONDITION: markRaw(EntryConditionNode),
@@ -126,6 +147,8 @@ const nodeTypes = {
   CHANNEL_WEBHOOK: markRaw(ChannelNode),
   BRANCH_USER: markRaw(BranchNode),
   BRANCH_EVENT: markRaw(BranchNode),
+  REWARD_COUPON: markRaw(RewardNode),
+  REWARD_POINT: markRaw(RewardNode),
   WAIT: markRaw(WaitNode),
   RESULT_SUCCESS: markRaw(ResultNode),
   RESULT_FAILURE: markRaw(ResultNode),
@@ -286,19 +309,56 @@ function handlePaneClick() {
   selectedEdgeId.value = null
 }
 
+const showDeleteConfirm = ref(false)
+const deleteTargetNodeId = ref<string | null>(null)
+
+const deleteTargetLabel = computed(() => {
+  if (!deleteTargetNodeId.value) return ''
+  const node = nodes.value.find((n) => n.id === deleteTargetNodeId.value)
+  return node?.data?.label || ''
+})
+
+function requestDeleteNode(nodeId: string) {
+  const node = nodes.value.find((n) => n.id === nodeId)
+  if (!node || node.type === 'ENTRY_CONDITION') return
+  deleteTargetNodeId.value = nodeId
+  showDeleteConfirm.value = true
+}
+
+function confirmDeleteNode() {
+  if (deleteTargetNodeId.value) {
+    deleteNode(deleteTargetNodeId.value)
+    if (selectedNodeId.value === deleteTargetNodeId.value) selectNode(null)
+  }
+  showDeleteConfirm.value = false
+  deleteTargetNodeId.value = null
+}
+
 function onKeydown(event: KeyboardEvent) {
   if ((event.key === 'Delete' || event.key === 'Backspace') && selectedEdgeId.value) {
     edges.value = edges.value.filter((e) => e.id !== selectedEdgeId.value)
     selectedEdgeId.value = null
     markDirty()
   }
+  if ((event.key === 'Delete' || event.key === 'Backspace') && selectedNodeId.value && !selectedEdgeId.value) {
+    requestDeleteNode(selectedNodeId.value)
+  }
+}
+
+function onFlowDeleteNode(e: Event) {
+  const nodeId = (e as CustomEvent).detail?.nodeId
+  if (nodeId) {
+    requestDeleteNode(nodeId)
+  }
 }
 
 onMounted(() => {
   window.addEventListener('keydown', onKeydown)
+  window.addEventListener('flow-delete-node', onFlowDeleteNode)
 })
 onUnmounted(() => {
   window.removeEventListener('keydown', onKeydown)
+  window.removeEventListener('flow-delete-node', onFlowDeleteNode)
 })
 
 function handleDeleteNode() {
@@ -349,13 +409,13 @@ function validateFlow(): string[] {
     errors.push('진입 조건의 시작일을 설정해주세요.')
   }
 
-  // 세그먼트 선택 시 분기 노드 필수 확인
+  // 세그먼트 선택 시 세그먼트 노드 필수 확인
   if (entryNode.data?.config?.audienceType === 'SEGMENT') {
     const hasBranch = nodes.value.some(
       (n) => n.type === 'BRANCH_USER' || n.type === 'BRANCH_EVENT',
     )
     if (!hasBranch) {
-      errors.push('세그먼트 대상 캠페인에는 사용자 기반 분기 또는 이벤트 기반 분기 노드가 반드시 포함되어야 합니다.')
+      errors.push('세그먼트 대상 캠페인에는 사용자 기반 또는 이벤트 기반 세그먼트 노드가 반드시 포함되어야 합니다.')
     }
   }
 
@@ -628,6 +688,18 @@ function handleAutoArrange() {
 
 .btn-confirm:hover {
   background: #1d4ed8;
+}
+
+.btn-delete {
+  background: #dc2626;
+}
+
+.btn-delete:hover {
+  background: #b91c1c;
+}
+
+.delete-icon {
+  background: #dc2626 !important;
 }
 
 .change-icon {

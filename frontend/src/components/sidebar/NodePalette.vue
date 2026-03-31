@@ -1,18 +1,27 @@
 <template>
   <div class="node-palette">
     <div class="palette-group">
-      <h3 class="group-title">채널</h3>
+      <h3 class="group-title">세그먼트</h3>
       <NodePaletteItem
-        v-for="item in channelItems"
+        v-for="item in branchItems"
         :key="item.type"
         :item="item"
       />
     </div>
 
     <div class="palette-group">
-      <h3 class="group-title">분기</h3>
+      <h3 class="group-title">리워드</h3>
       <NodePaletteItem
-        v-for="item in branchItems"
+        v-for="item in rewardItems"
+        :key="item.type"
+        :item="item"
+      />
+    </div>
+
+    <div class="palette-group">
+      <h3 class="group-title">채널</h3>
+      <NodePaletteItem
+        v-for="item in channelItems"
         :key="item.type"
         :item="item"
       />
@@ -63,6 +72,19 @@ const channelItems = computed(() => {
 
 const branchItems = computed(() => {
   return SIDEBAR_ITEMS.filter((item) => item.group === 'branch')
+})
+
+const rewardItems = computed(() => {
+  return SIDEBAR_ITEMS
+    .filter((item) => item.group === 'reward')
+    .filter((item) => {
+      const rt = settingsStore.rewardTypes.find((r) => r.type === item.type)
+      return rt ? rt.enabled : true
+    })
+    .map((item) => {
+      const rt = settingsStore.rewardTypes.find((r) => r.type === item.type)
+      return rt ? { ...item, color: rt.color, label: rt.label, icon: rt.icon } : item
+    })
 })
 
 const otherItems = computed(() => {

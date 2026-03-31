@@ -43,6 +43,25 @@ export interface TemplateItem {
   name: string
   title: string
   body: string
+  channelConfig?: Record<string, any>
+}
+
+export interface RewardItem {
+  id: string
+  type: 'COUPON' | 'POINT'
+  name: string
+  description: string
+  value: string
+  enabled: boolean
+}
+
+export interface RewardTypeItem {
+  id: string
+  type: string
+  label: string
+  icon: string
+  color: string
+  enabled: boolean
 }
 
 // ── Defaults ──
@@ -93,6 +112,20 @@ const DEFAULT_CHANNELS: ChannelItem[] = [
   { id: 'ch6', type: 'CHANNEL_WEBHOOK', label: '웹훅', icon: '🔗', color: '#7F8C8D', enabled: true },
 ]
 
+const DEFAULT_REWARD_TYPES: RewardTypeItem[] = [
+  { id: 'rt1', type: 'REWARD_COUPON', label: '쿠폰', icon: '🎟️', color: '#E67E22', enabled: true },
+  { id: 'rt2', type: 'REWARD_POINT', label: '포인트', icon: '💰', color: '#E67E22', enabled: true },
+]
+
+const DEFAULT_REWARDS: RewardItem[] = [
+  { id: 'rw1', type: 'COUPON', name: '신규 가입 쿠폰', description: '신규 회원 가입 시 지급되는 할인 쿠폰', value: '10% 할인', enabled: true },
+  { id: 'rw2', type: 'COUPON', name: '첫 구매 쿠폰', description: '첫 구매 시 사용 가능한 할인 쿠폰', value: '5,000원 할인', enabled: true },
+  { id: 'rw3', type: 'COUPON', name: '생일 축하 쿠폰', description: '생일 달에 지급되는 특별 쿠폰', value: '15% 할인', enabled: true },
+  { id: 'rw4', type: 'POINT', name: '리뷰 작성 포인트', description: '상품 리뷰 작성 시 적립 포인트', value: '500P', enabled: true },
+  { id: 'rw5', type: 'POINT', name: '출석 체크 포인트', description: '일일 출석 체크 시 적립 포인트', value: '100P', enabled: true },
+  { id: 'rw6', type: 'POINT', name: '추천인 포인트', description: '친구 추천 성공 시 적립 포인트', value: '2,000P', enabled: false },
+]
+
 const DEFAULT_TEMPLATES: TemplateItem[] = [
   { id: 'tpl1', channelType: 'CHANNEL_PUSH', name: '환영 푸시', title: '환영합니다!', body: '가입을 축하드립니다. 지금 바로 첫 혜택을 확인해보세요.' },
   { id: 'tpl2', channelType: 'CHANNEL_PUSH', name: '장바구니 리마인드', title: '장바구니에 담긴 상품이 있어요', body: '잊지 마세요! 장바구니에 담아둔 상품을 지금 구매하세요.' },
@@ -107,6 +140,8 @@ const KEYS = {
   vars: 'campaign-settings-personalization-vars',
   channels: 'campaign-settings-channels',
   templates: 'campaign-settings-templates',
+  rewards: 'campaign-settings-rewards',
+  rewardTypes: 'campaign-settings-reward-types',
 } as const
 
 function load<T>(key: string, defaults: T[]): T[] {
@@ -152,6 +187,8 @@ export const useSettingsStore = defineStore('settings', () => {
   const personalizationVars = ref<PersonalizationVar[]>(load(KEYS.vars, DEFAULT_PERSONALIZATION_VARS))
   const channels = ref<ChannelItem[]>(load(KEYS.channels, DEFAULT_CHANNELS))
   const templates = ref<TemplateItem[]>(load(KEYS.templates, DEFAULT_TEMPLATES))
+  const rewards = ref<RewardItem[]>(load(KEYS.rewards, DEFAULT_REWARDS))
+  const rewardTypes = ref<RewardTypeItem[]>(load(KEYS.rewardTypes, DEFAULT_REWARD_TYPES))
 
   const eventsCrud = createCrud(events)
   const propertiesCrud = createCrud(properties)
@@ -159,6 +196,8 @@ export const useSettingsStore = defineStore('settings', () => {
   const varsCrud = createCrud(personalizationVars)
   const channelsCrud = createCrud(channels)
   const templatesCrud = createCrud(templates)
+  const rewardsCrud = createCrud(rewards)
+  const rewardTypesCrud = createCrud(rewardTypes)
 
   // ── Dirty tracking ──
   const isDirty = ref(false)
@@ -172,10 +211,12 @@ export const useSettingsStore = defineStore('settings', () => {
       personalizationVars: personalizationVars.value,
       channels: channels.value,
       templates: templates.value,
+      rewards: rewards.value,
+      rewardTypes: rewardTypes.value,
     })
   }
 
-  watch([events, properties, pushApps, personalizationVars, channels, templates], () => {
+  watch([events, properties, pushApps, personalizationVars, channels, templates, rewards, rewardTypes], () => {
     isDirty.value = JSON.stringify({
       events: events.value,
       properties: properties.value,
@@ -183,6 +224,8 @@ export const useSettingsStore = defineStore('settings', () => {
       personalizationVars: personalizationVars.value,
       channels: channels.value,
       templates: templates.value,
+      rewards: rewards.value,
+      rewardTypes: rewardTypes.value,
     }) !== snapshot
   }, { deep: true })
 
@@ -193,6 +236,8 @@ export const useSettingsStore = defineStore('settings', () => {
     save(KEYS.vars, personalizationVars.value)
     save(KEYS.channels, channels.value)
     save(KEYS.templates, templates.value)
+    save(KEYS.rewards, rewards.value)
+    save(KEYS.rewardTypes, rewardTypes.value)
     snapshot = takeSnapshot()
     isDirty.value = false
   }
@@ -204,6 +249,8 @@ export const useSettingsStore = defineStore('settings', () => {
     personalizationVars.value = load(KEYS.vars, DEFAULT_PERSONALIZATION_VARS)
     channels.value = load(KEYS.channels, DEFAULT_CHANNELS)
     templates.value = load(KEYS.templates, DEFAULT_TEMPLATES)
+    rewards.value = load(KEYS.rewards, DEFAULT_REWARDS)
+    rewardTypes.value = load(KEYS.rewardTypes, DEFAULT_REWARD_TYPES)
     snapshot = takeSnapshot()
     isDirty.value = false
   }
@@ -223,11 +270,13 @@ export const useSettingsStore = defineStore('settings', () => {
     personalizationVars.value = JSON.parse(JSON.stringify(DEFAULT_PERSONALIZATION_VARS))
     channels.value = JSON.parse(JSON.stringify(DEFAULT_CHANNELS))
     templates.value = JSON.parse(JSON.stringify(DEFAULT_TEMPLATES))
+    rewards.value = JSON.parse(JSON.stringify(DEFAULT_REWARDS))
+    rewardTypes.value = JSON.parse(JSON.stringify(DEFAULT_REWARD_TYPES))
     saveAll()
   }
 
   return {
-    events, properties, pushApps, personalizationVars, channels, templates,
+    events, properties, pushApps, personalizationVars, channels, templates, rewards, rewardTypes,
     isDirty, saveAll, discardAll,
     // events
     addEvent, updateEvent, removeEvent,
@@ -241,6 +290,10 @@ export const useSettingsStore = defineStore('settings', () => {
     updateChannel: channelsCrud.update,
     // templates
     addTemplate: templatesCrud.add, updateTemplate: templatesCrud.update, removeTemplate: templatesCrud.remove,
+    // rewards
+    addReward: rewardsCrud.add, updateReward: rewardsCrud.update, removeReward: rewardsCrud.remove,
+    // reward types
+    updateRewardType: rewardTypesCrud.update,
     // reset
     resetToDefaults,
   }

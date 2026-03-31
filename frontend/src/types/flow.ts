@@ -9,6 +9,8 @@ export type NodeType =
   | 'CHANNEL_WEBHOOK'
   | 'BRANCH_USER'
   | 'BRANCH_EVENT'
+  | 'REWARD_COUPON'
+  | 'REWARD_POINT'
   | 'WAIT'
   | 'RESULT_SUCCESS'
   | 'RESULT_FAILURE'
@@ -101,5 +103,5 @@ export interface SidebarNodeItem {
   label: string
   icon: string
   color: string
-  group: 'channel' | 'branch' | 'other'
+  group: 'channel' | 'branch' | 'reward' | 'other'
 }

@@ -1,6 +1,7 @@
 <template>
   <div class="campaign-header">
     <div class="header-left">
+      <button class="btn-back" @click="$router.push('/campaigns')" title="목록으로">←</button>
       <span class="campaign-label">캠페인 키</span>
       <span class="campaign-key">{{ campaign?.id }}</span>
       <span class="status-dot" :class="statusClass"></span>
@@ -140,6 +141,26 @@ const statusLabel = computed(() => {
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
+}
+
+.btn-back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 16px;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-back:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
 }
 
 .campaign-label {

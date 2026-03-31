@@ -5,6 +5,11 @@ const router = createRouter({
   routes: [
     {
       path: '/',
+      name: 'campaign-ops',
+      component: () => import('@/views/CampaignOpsView.vue'),
+    },
+    {
+      path: '/campaigns',
       name: 'campaign-list',
       component: () => import('@/views/CampaignListView.vue'),
     },
@@ -14,9 +19,24 @@ const router = createRouter({
       component: () => import('@/views/CampaignBuilderView.vue'),
     },
     {
-      path: '/ops',
-      name: 'campaign-ops',
-      component: () => import('@/views/CampaignOpsView.vue'),
+      path: '/recommend',
+      name: 'campaign-recommend',
+      component: () => import('@/views/CampaignRecommendView.vue'),
+    },
+    {
+      path: '/monitoring',
+      name: 'campaign-monitoring',
+      component: () => import('@/views/CampaignMonitoringView.vue'),
+    },
+    {
+      path: '/analytics',
+      name: 'campaign-analytics',
+      component: () => import('@/views/CampaignAnalyticsView.vue'),
+    },
+    {
+      path: '/templates',
+      name: 'templates',
+      component: () => import('@/views/TemplatesView.vue'),
     },
     {
       path: '/settings',

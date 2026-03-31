@@ -3,8 +3,6 @@
     <div class="list-header">
       <h1>캠페인 관리</h1>
       <div class="header-buttons">
-        <button class="btn-ops" @click="$router.push('/ops')">운영 현황</button>
-        <button class="btn-settings" @click="$router.push('/settings')">설정 관리</button>
         <button class="btn-create" @click="createCampaign">+ 새 캠페인</button>
       </div>
     </div>

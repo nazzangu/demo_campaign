@@ -8,16 +8,20 @@ export const SIDEBAR_ITEMS: SidebarNodeItem[] = [
   { type: 'CHANNEL_BRAND_TEMPLATE', label: '브랜드 메시지 (기본형)', icon: '📋', color: '#9B59B6', group: 'channel' },
   { type: 'CHANNEL_SMS', label: '문자메시지', icon: '📩', color: '#27AE60', group: 'channel' },
   { type: 'CHANNEL_WEBHOOK', label: '웹훅', icon: '🔗', color: '#7F8C8D', group: 'channel' },
-  // 분기
-  { type: 'BRANCH_USER', label: '사용자 기반 분기', icon: '👤', color: '#8E44AD', group: 'branch' },
-  { type: 'BRANCH_EVENT', label: '이벤트 기반 분기', icon: '⚡', color: '#8E44AD', group: 'branch' },
+  // 세그먼트
+  { type: 'BRANCH_USER', label: '사용자 기반', icon: '👤', color: '#8E44AD', group: 'branch' },
+  { type: 'BRANCH_EVENT', label: '이벤트 기반', icon: '⚡', color: '#8E44AD', group: 'branch' },
+  // 리워드
+  { type: 'REWARD_COUPON', label: '쿠폰', icon: '🎟️', color: '#E67E22', group: 'reward' },
+  { type: 'REWARD_POINT', label: '포인트', icon: '💰', color: '#E67E22', group: 'reward' },
   // 기타
   { type: 'WAIT', label: '대기 시간', icon: '⏱️', color: '#F39C12', group: 'other' },
 ]
 
 export const SIDEBAR_GROUPS = [
   { key: 'channel', label: '채널' },
-  { key: 'branch', label: '분기' },
+  { key: 'branch', label: '세그먼트' },
+  { key: 'reward', label: '리워드' },
   { key: 'other', label: '기타' },
 ] as const
 
@@ -49,7 +53,7 @@ export function getDefaultNodeData(type: NodeType): FlowNodeData {
       return { label: '웹훅', config: { channelType: 'WEBHOOK', configured: false } }
     case 'BRANCH_USER':
       return {
-        label: '사용자 기반 분기',
+        label: '사용자 기반',
         config: {
           branchType: 'USER',
           branches: [
@@ -60,7 +64,7 @@ export function getDefaultNodeData(type: NodeType): FlowNodeData {
       }
     case 'BRANCH_EVENT':
       return {
-        label: '이벤트 기반 분기',
+        label: '이벤트 기반',
         config: {
           branchType: 'EVENT',
           waitDuration: { value: 1, unit: 'DAY' },
@@ -68,6 +72,28 @@ export function getDefaultNodeData(type: NodeType): FlowNodeData {
             { index: 1, label: '구매 고객', condition: {} },
             { index: 2, label: '그 외 사용자', condition: {}, isDefault: true },
           ],
+        },
+      }
+    case 'REWARD_COUPON':
+      return {
+        label: '쿠폰',
+        config: {
+          rewardType: 'COUPON',
+          rewardId: '',
+          rewardName: '',
+          value: '',
+          configured: false,
+        },
+      }
+    case 'REWARD_POINT':
+      return {
+        label: '포인트',
+        config: {
+          rewardType: 'POINT',
+          rewardId: '',
+          rewardName: '',
+          value: '',
+          configured: false,
         },
       }
     case 'WAIT':

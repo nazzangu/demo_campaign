@@ -6,7 +6,6 @@
         <p class="desc">캠페인 빌더에서 사용하는 이벤트, 속성, 채널, 템플릿 등을 관리합니다.</p>
       </div>
       <div class="header-actions">
-        <button class="btn btn-secondary" @click="$router.push('/')">캠페인 목록</button>
         <button class="btn btn-danger" @click="handleReset">전체 초기화</button>
       </div>
     </div>
@@ -21,7 +20,7 @@
 
     <!-- ═══ 이벤트 관리 ═══ -->
     <div v-if="activeTab === 'events'" class="tab-content">
-      <div class="content-desc">분기 조건 및 전환 추적에 사용할 이벤트 목록을 관리합니다.</div>
+      <div class="content-desc">세그먼트 조건 및 전환 추적에 사용할 이벤트 목록을 관리합니다.</div>
       <div class="add-row">
         <input v-model="forms.event.name" placeholder="이벤트 코드 (예: order_complete)" class="input" @keyup.enter="addEvent" />
         <input v-model="forms.event.label" placeholder="표시 이름 (예: 구매)" class="input" @keyup.enter="addEvent" />
@@ -167,38 +166,97 @@
       </div>
     </div>
 
-    <!-- ═══ 메시지 템플릿 관리 ═══ -->
-    <div v-if="activeTab === 'templates'" class="tab-content">
-      <div class="content-desc">채널별 메시지 템플릿을 등록하고 캠페인에서 재사용할 수 있습니다.</div>
-      <div class="tpl-add-form">
+    <!-- ═══ 리워드 유형 관리 ═══ -->
+    <div v-if="activeTab === 'rewardTypes'" class="tab-content">
+      <div class="content-desc">캠페인 빌더에서 사용할 리워드 유형을 설정합니다. 비활성화된 유형은 사이드바에 표시되지 않습니다.</div>
+      <div class="channel-list">
+        <div v-for="rt in store.rewardTypes" :key="rt.id" class="channel-card" :class="{ disabled: !rt.enabled }">
+          <div class="channel-left">
+            <span class="channel-icon" :style="{ color: rt.color }">{{ rt.icon }}</span>
+            <div class="channel-info">
+              <div class="channel-label">{{ rt.label }}</div>
+              <code class="channel-type">{{ rt.type }}</code>
+            </div>
+          </div>
+          <div class="channel-right">
+            <input
+              type="color"
+              :value="rt.color"
+              class="color-picker"
+              @input="store.updateRewardType(rt.id, { color: ($event.target as HTMLInputElement).value })"
+            />
+            <label class="toggle">
+              <input type="checkbox" :checked="rt.enabled" @change="store.updateRewardType(rt.id, { enabled: !rt.enabled })" />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ 리워드 관리 ═══ -->
+    <div v-if="activeTab === 'rewards'" class="tab-content">
+      <div class="content-desc">캠페인에서 제공할 쿠폰과 포인트 리워드를 관리합니다.</div>
+      <div class="reward-add-form">
         <div class="add-row">
-          <select v-model="forms.tpl.channelType" class="input input-select">
-            <option value="">채널 선택</option>
-            <option v-for="ch in store.channels" :key="ch.id" :value="ch.type">{{ ch.icon }} {{ ch.label }}</option>
+          <select v-model="forms.reward.type" class="input input-select">
+            <option value="COUPON">🎟️ 쿠폰</option>
+            <option value="POINT">💰 포인트</option>
           </select>
-          <input v-model="forms.tpl.name" placeholder="템플릿 이름" class="input" />
+          <input v-model="forms.reward.name" placeholder="리워드 이름 (예: 신규 가입 쿠폰)" class="input" @keyup.enter="addReward" />
+          <input v-model="forms.reward.value" placeholder="값 (예: 10% 할인, 500P)" class="input" @keyup.enter="addReward" />
         </div>
         <div class="add-row">
-          <input v-model="forms.tpl.title" placeholder="메시지 제목" class="input" />
-        </div>
-        <div class="add-row">
-          <textarea v-model="forms.tpl.body" placeholder="메시지 내용" class="input textarea-sm" rows="2"></textarea>
-          <button class="btn btn-primary" @click="addTemplate" :disabled="!forms.tpl.channelType || !forms.tpl.name || !forms.tpl.title">추가</button>
+          <input v-model="forms.reward.description" placeholder="설명 (예: 신규 회원 가입 시 지급되는 할인 쿠폰)" class="input" @keyup.enter="addReward" />
+          <button class="btn btn-primary" @click="addReward" :disabled="!forms.reward.name || !forms.reward.value">추가</button>
         </div>
       </div>
 
-      <div v-for="ch in channelsWithTemplates" :key="ch.type" class="tpl-group">
-        <h4 class="tpl-group-title">{{ ch.icon }} {{ ch.label }}</h4>
-        <div v-for="tpl in getTemplatesByChannel(ch.type)" :key="tpl.id" class="tpl-card">
-          <div class="tpl-top">
-            <span class="tpl-name">{{ tpl.name }}</span>
-            <button class="act delete" @click="store.removeTemplate(tpl.id)">삭제</button>
+      <div class="reward-section" v-if="store.rewards.filter(r => r.type === 'COUPON').length">
+        <h4 class="reward-section-title">🎟️ 쿠폰</h4>
+        <div class="reward-list">
+          <div v-for="item in store.rewards.filter(r => r.type === 'COUPON')" :key="item.id" class="reward-card" :class="{ disabled: !item.enabled }">
+            <div class="reward-left">
+              <div class="reward-name">{{ item.name }}</div>
+              <div class="reward-desc">{{ item.description }}</div>
+              <div class="reward-value">
+                <span class="reward-value-badge coupon">{{ item.value }}</span>
+              </div>
+            </div>
+            <div class="reward-right">
+              <label class="toggle">
+                <input type="checkbox" :checked="item.enabled" @change="store.updateReward(item.id, { enabled: !item.enabled })" />
+                <span class="toggle-slider"></span>
+              </label>
+              <button class="act delete" @click="store.removeReward(item.id)">삭제</button>
+            </div>
           </div>
-          <div class="tpl-title">{{ tpl.title }}</div>
-          <div class="tpl-body">{{ tpl.body }}</div>
         </div>
       </div>
-      <div v-if="!store.templates.length" class="empty-box">등록된 템플릿이 없습니다.</div>
+
+      <div class="reward-section" v-if="store.rewards.filter(r => r.type === 'POINT').length">
+        <h4 class="reward-section-title">💰 포인트</h4>
+        <div class="reward-list">
+          <div v-for="item in store.rewards.filter(r => r.type === 'POINT')" :key="item.id" class="reward-card" :class="{ disabled: !item.enabled }">
+            <div class="reward-left">
+              <div class="reward-name">{{ item.name }}</div>
+              <div class="reward-desc">{{ item.description }}</div>
+              <div class="reward-value">
+                <span class="reward-value-badge point">{{ item.value }}</span>
+              </div>
+            </div>
+            <div class="reward-right">
+              <label class="toggle">
+                <input type="checkbox" :checked="item.enabled" @change="store.updateReward(item.id, { enabled: !item.enabled })" />
+                <span class="toggle-slider"></span>
+              </label>
+              <button class="act delete" @click="store.removeReward(item.id)">삭제</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="!store.rewards.length" class="empty-box">등록된 리워드가 없습니다.</div>
     </div>
 
     <!-- 하단 고정 저장 바 -->
@@ -230,7 +288,7 @@ import { useSettingsStore } from '@/stores/settingsStore'
 
 const store = useSettingsStore()
 
-type TabKey = 'events' | 'properties' | 'pushApps' | 'vars' | 'channels' | 'templates'
+type TabKey = 'events' | 'properties' | 'pushApps' | 'vars' | 'channels' | 'rewardTypes' | 'rewards'
 const activeTab = ref<TabKey>('events')
 
 const TABS = computed(() => [
@@ -239,7 +297,8 @@ const TABS = computed(() => [
   { key: 'pushApps' as TabKey, label: '푸시 앱', count: store.pushApps.length },
   { key: 'vars' as TabKey, label: '개인화 변수', count: store.personalizationVars.length },
   { key: 'channels' as TabKey, label: '채널', count: store.channels.filter((c) => c.enabled).length },
-  { key: 'templates' as TabKey, label: '템플릿', count: store.templates.length },
+  { key: 'rewardTypes' as TabKey, label: '리워드 유형', count: store.rewardTypes.filter((r) => r.enabled).length },
+  { key: 'rewards' as TabKey, label: '리워드 항목', count: store.rewards.filter((r) => r.enabled).length },
 ])
 
 // ── Edit state ──
@@ -258,7 +317,7 @@ const forms = reactive({
   prop: { name: '', label: '' },
   app: { appKey: '', label: '', platform: 'ALL' as 'ALL' | 'ANDROID' | 'IOS' },
   pvar: { name: '', label: '', sampleValue: '' },
-  tpl: { channelType: '', name: '', title: '', body: '' },
+  reward: { type: 'COUPON' as 'COUPON' | 'POINT', name: '', description: '', value: '' },
 })
 
 function addEvent() {
@@ -291,25 +350,17 @@ function addVar() {
   forms.pvar.sampleValue = ''
 }
 
-function addTemplate() {
-  if (!forms.tpl.channelType || !forms.tpl.name || !forms.tpl.title) return
-  store.addTemplate({ channelType: forms.tpl.channelType, name: forms.tpl.name, title: forms.tpl.title, body: forms.tpl.body })
-  forms.tpl.name = ''
-  forms.tpl.title = ''
-  forms.tpl.body = ''
+function addReward() {
+  if (!forms.reward.name || !forms.reward.value) return
+  store.addReward({ type: forms.reward.type, name: forms.reward.name, description: forms.reward.description, value: forms.reward.value, enabled: true } as any)
+  forms.reward.name = ''
+  forms.reward.description = ''
+  forms.reward.value = ''
+  forms.reward.type = 'COUPON'
 }
 
 function platformLabel(p: string) {
   return p === 'ALL' ? '전체' : p
-}
-
-const channelsWithTemplates = computed(() => {
-  const types = new Set(store.templates.map((t) => t.channelType))
-  return store.channels.filter((c) => types.has(c.type))
-})
-
-function getTemplatesByChannel(type: string) {
-  return store.templates.filter((t) => t.channelType === type)
 }
 
 // ── Save / Discard ──
@@ -440,6 +491,23 @@ function handleReset() {
 .tpl-title { font-size: 12px; color: #374151; font-weight: 500; margin-bottom: 2px; }
 .tpl-body { font-size: 12px; color: #6b7280; line-height: 1.4; }
 .empty-box { text-align: center; color: #9ca3af; padding: 30px 0; font-size: 13px; }
+
+/* Rewards */
+.reward-add-form { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px; margin-bottom: 16px; }
+.reward-add-form .add-row:last-child { margin-bottom: 0; }
+.reward-section { margin-bottom: 20px; }
+.reward-section-title { font-size: 14px; font-weight: 700; color: #374151; margin-bottom: 10px; }
+.reward-list { display: flex; flex-direction: column; gap: 8px; }
+.reward-card { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; transition: all 0.15s; }
+.reward-card.disabled { opacity: 0.5; background: #f9fafb; }
+.reward-left { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
+.reward-name { font-size: 14px; font-weight: 600; color: #111827; }
+.reward-desc { font-size: 12px; color: #6b7280; }
+.reward-value { margin-top: 2px; }
+.reward-value-badge { display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 10px; }
+.reward-value-badge.coupon { background: #fef3c7; color: #92400e; }
+.reward-value-badge.point { background: #dbeafe; color: #1e40af; }
+.reward-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
 
 /* Save bar */
 .save-bar { position: sticky; bottom: 0; left: 0; right: 0; z-index: 50; padding: 0 0 20px; }

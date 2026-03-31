@@ -1,5 +1,6 @@
 <template>
-  <div class="config-panel" v-if="node">
+  <div class="config-panel" v-if="node" :style="{ width: panelWidth + 'px' }">
+    <div class="resize-handle" @mousedown="startResize"></div>
     <div class="panel-header">
       <h3>{{ node.data?.label }} 설정</h3>
       <button class="close-btn" @click="$emit('close')">✕</button>
@@ -36,6 +37,11 @@
         :config="node.data?.config"
         @update="onUpdate"
       />
+      <RewardConfigForm
+        v-else-if="node.type?.startsWith('REWARD_')"
+        :config="node.data?.config"
+        @update="onUpdate"
+      />
       <WaitConfigForm
         v-else-if="node.type === 'WAIT'"
         :config="node.data?.config"
@@ -52,12 +58,14 @@
 </template>
 
 <script setup lang="ts">
+import { ref, onBeforeUnmount } from 'vue'
 import EntryConditionForm from './EntryConditionForm.vue'
 import PushConfigForm from './PushConfigForm.vue'
 import SmsConfigForm from './SmsConfigForm.vue'
 import KakaoConfigForm from './KakaoConfigForm.vue'
 import ChannelConfigForm from './ChannelConfigForm.vue'
 import BranchConfigForm from './BranchConfigForm.vue'
+import RewardConfigForm from './RewardConfigForm.vue'
 import WaitConfigForm from './WaitConfigForm.vue'
 
 defineProps<{
@@ -73,16 +81,65 @@ const emit = defineEmits<{
 function onUpdate(config: any) {
   emit('updateConfig', config)
 }
+
+const MIN_WIDTH = 320
+const MAX_WIDTH = 800
+const panelWidth = ref(420)
+
+function startResize(e: MouseEvent) {
+  e.preventDefault()
+  const startX = e.clientX
+  const startWidth = panelWidth.value
+
+  function onMouseMove(ev: MouseEvent) {
+    const delta = startX - ev.clientX
+    const newWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startWidth + delta))
+    panelWidth.value = newWidth
+  }
+
+  function onMouseUp() {
+    document.removeEventListener('mousemove', onMouseMove)
+    document.removeEventListener('mouseup', onMouseUp)
+    document.body.style.cursor = ''
+    document.body.style.userSelect = ''
+  }
+
+  document.body.style.cursor = 'col-resize'
+  document.body.style.userSelect = 'none'
+  document.addEventListener('mousemove', onMouseMove)
+  document.addEventListener('mouseup', onMouseUp)
+}
+
+onBeforeUnmount(() => {
+  document.body.style.cursor = ''
+  document.body.style.userSelect = ''
+})
 </script>
 
 <style scoped>
 .config-panel {
-  width: 420px;
+  position: relative;
   background: #fff;
   border-left: 1px solid #e5e7eb;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.resize-handle {
+  position: absolute;
+  top: 0;
+  left: -3px;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 10;
+}
+
+.resize-handle:hover,
+.resize-handle:active {
+  background: rgba(99, 102, 241, 0.3);
 }
 
 .panel-header {

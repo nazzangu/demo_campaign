@@ -1,5 +1,16 @@
 <template>
   <div class="push-form">
+    <!-- 템플릿 불러오기 -->
+    <div class="load-template-bar">
+      <button class="btn-load-template" @click="showPicker = true">📄 템플릿 불러오기</button>
+    </div>
+    <TemplatePickerModal
+      :visible="showPicker"
+      channel-type="CHANNEL_PUSH"
+      @close="showPicker = false"
+      @select="applyTemplate"
+    />
+
     <!-- 발송 정보 -->
     <section class="section">
       <h4 class="section-title">발송 정보</h4>
@@ -271,13 +282,28 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, computed } from 'vue'
+import { reactive, computed, ref } from 'vue'
 import { useSettingsStore } from '@/stores/settingsStore'
+import type { TemplateItem } from '@/stores/settingsStore'
+import TemplatePickerModal from './TemplatePickerModal.vue'
 
 const settingsStore = useSettingsStore()
 
 const props = defineProps<{ config: any }>()
 const emit = defineEmits<{ update: [config: any] }>()
+
+const showPicker = ref(false)
+
+function applyTemplate(tpl: TemplateItem) {
+  showPicker.value = false
+  if (tpl.channelConfig) {
+    Object.assign(local, tpl.channelConfig)
+  } else {
+    local.title = tpl.title || local.title
+    local.body = tpl.body || local.body
+  }
+  emitUpdate()
+}
 
 const DAYS = [
   { value: 'MON', label: '월' },
@@ -385,6 +411,28 @@ function emitUpdate() {
 </script>
 
 <style scoped>
+.load-template-bar {
+  margin-bottom: 12px;
+}
+
+.btn-load-template {
+  width: 100%;
+  padding: 10px;
+  background: #f0f7ff;
+  color: #1a73e8;
+  border: 1px dashed #93c5fd;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+
+.btn-load-template:hover {
+  background: #dbeafe;
+  border-color: #60a5fa;
+}
+
 .push-form {
   display: flex;
   flex-direction: column;

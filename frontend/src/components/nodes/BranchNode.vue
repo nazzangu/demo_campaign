@@ -4,7 +4,12 @@
     <div class="node-header">
       <span class="node-icon">{{ data.config?.branchType === 'EVENT' ? '⚡' : '👤' }}</span>
       <span class="node-title">{{ data.label }}</span>
-      <button class="menu-btn">⋮</button>
+      <div class="menu-wrapper">
+        <button class="menu-btn" @click.stop="showMenu = !showMenu">⋮</button>
+        <div v-if="showMenu" class="dropdown-menu">
+          <button class="dropdown-item delete" @click.stop="handleDelete">🗑️ 노드 삭제</button>
+        </div>
+      </div>
     </div>
     <div class="node-body">
       <div v-if="data.config?.waitDuration" class="wait-badge">
@@ -35,8 +40,24 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { Handle, Position } from '@vue-flow/core'
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
+import { Handle, Position, useNode } from '@vue-flow/core'
+
+const { id } = useNode()
+
+const showMenu = ref(false)
+
+function handleDelete() {
+  showMenu.value = false
+  window.dispatchEvent(new CustomEvent('flow-delete-node', { detail: { nodeId: id } }))
+}
+
+function closeMenu() {
+  showMenu.value = false
+}
+
+onMounted(() => document.addEventListener('click', closeMenu))
+onBeforeUnmount(() => document.removeEventListener('click', closeMenu))
 
 const props = defineProps<{
   data: any
@@ -87,14 +108,57 @@ function unitLabel(unit: string): string {
   font-weight: 600;
 }
 
-.menu-btn {
+.menu-wrapper {
   margin-left: auto;
+  position: relative;
+}
+
+.menu-btn {
   background: none;
   border: none;
   cursor: pointer;
   font-size: 16px;
   color: inherit;
   opacity: 0.6;
+}
+
+.menu-btn:hover {
+  opacity: 1;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  z-index: 50;
+  min-width: 120px;
+  overflow: hidden;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.dropdown-item.delete {
+  color: #dc2626;
+}
+
+.dropdown-item.delete:hover {
+  background: #fef2f2;
 }
 
 .node-body {

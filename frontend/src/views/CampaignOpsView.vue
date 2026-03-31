@@ -6,7 +6,6 @@
         <p class="desc">캠페인 상태를 확인하고 시작, 일시정지, 중지할 수 있습니다.</p>
       </div>
       <div class="header-actions">
-        <button class="btn btn-secondary" @click="$router.push('/')">캠페인 목록</button>
         <button class="btn btn-secondary" @click="loadCampaigns">새로고침</button>
       </div>
     </div>

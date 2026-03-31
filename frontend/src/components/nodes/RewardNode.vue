@@ -1,8 +1,8 @@
 <template>
-  <div class="channel-node" :style="{ borderLeftColor: nodeColor }">
+  <div class="reward-node" :style="{ borderLeftColor: nodeColor }">
     <Handle type="target" :position="Position.Top" />
     <div class="node-header" :style="{ background: nodeColor + '15', color: nodeColor }">
-      <span class="node-icon">{{ nodeIcon }}</span>
+      <span class="node-icon">{{ data.config?.rewardType === 'POINT' ? '💰' : '🎟️' }}</span>
       <span class="node-title">{{ data.label }}</span>
       <div class="menu-wrapper">
         <button class="menu-btn" @click.stop="showMenu = !showMenu">⋮</button>
@@ -16,23 +16,18 @@
         ⚠️ 설정을 완료해주세요
       </div>
       <div v-else class="configured">
-        <div>✅ 설정 완료</div>
-        <div v-if="messageTitle" class="msg-title">{{ messageTitle }}</div>
+        <div>✅ {{ data.config.rewardName }}</div>
+        <div class="reward-value">{{ data.config.value }}</div>
       </div>
     </div>
-    <Handle id="success" type="source" :position="Position.Bottom" :style="{ left: '30%' }" />
-    <Handle id="failure" type="source" :position="Position.Bottom" :style="{ left: '70%' }" />
+    <Handle type="source" :position="Position.Bottom" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { Handle, Position, useNode } from '@vue-flow/core'
-import { getNodeColor } from '@/utils/nodeDefaults'
-import { useSettingsStore } from '@/stores/settingsStore'
-import type { NodeType } from '@/types/flow'
 
-const settingsStore = useSettingsStore()
 const { id } = useNode()
 
 const showMenu = ref(false)
@@ -49,26 +44,16 @@ function closeMenu() {
 onMounted(() => document.addEventListener('click', closeMenu))
 onBeforeUnmount(() => document.removeEventListener('click', closeMenu))
 
-const props = defineProps<{
+defineProps<{
   type: string
   data: any
 }>()
 
-const storeChannel = computed(() => settingsStore.channels.find((c) => c.type === props.type))
-
-const nodeColor = computed(() => storeChannel.value?.color || getNodeColor(props.type as NodeType))
-
-const nodeIcon = computed(() => storeChannel.value?.icon || '📨')
-
-const messageTitle = computed(() => {
-  const config = props.data?.config
-  if (!config) return ''
-  return config.title || config.name || ''
-})
+const nodeColor = computed(() => '#E67E22')
 </script>
 
 <style scoped>
-.channel-node {
+.reward-node {
   background: #fff;
   border: 1px solid #e5e7eb;
   border-left: 4px solid;
@@ -160,12 +145,10 @@ const messageTitle = computed(() => {
   border-radius: 6px;
 }
 
-.msg-title {
+.reward-value {
   margin-top: 4px;
   font-size: 11px;
-  color: #374151;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-weight: 700;
+  color: #92400e;
 }
 </style>
