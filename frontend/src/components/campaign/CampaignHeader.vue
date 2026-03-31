@@ -29,6 +29,14 @@
       </div>
     </div>
     <div class="header-right">
+      <button
+        class="btn btn-simulate"
+        :disabled="!canSimulate"
+        @click="$emit('simulate')"
+      >
+        시뮬레이션
+      </button>
+
       <!-- DRAFT: 저장 + 시작 -->
       <template v-if="!campaign || campaign.status === 'DRAFT'">
         <button class="btn btn-secondary" @click="$emit('save')" :disabled="!isDirty">
@@ -97,9 +105,17 @@ defineEmits<{
   activate: []
   pause: []
   stop: []
+  simulate: []
   updateName: [name: string]
   updateDesc: [desc: string]
 }>()
+
+const canSimulate = computed(() => {
+  if (!props.campaign) return false
+  if (props.campaign.status === 'ARCHIVED') return false
+  if (props.isDirty) return false
+  return true
+})
 
 const isReadonly = computed(() => {
   return props.campaign?.status === 'ARCHIVED' || props.campaign?.status === 'COMPLETED'
@@ -326,6 +342,17 @@ const statusLabel = computed(() => {
 
 .btn-stop:hover {
   background: #fee2e2;
+}
+
+.btn-simulate {
+  background: #faf5ff;
+  color: #7c3aed;
+  border: 1px solid #ddd6fe;
+}
+
+.btn-simulate:hover {
+  background: #ede9fe;
+  border-color: #c4b5fd;
 }
 
 .readonly-badge {

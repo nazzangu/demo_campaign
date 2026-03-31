@@ -39,10 +39,10 @@ const route = useRoute()
 
 const menuItems = [
   { to: '/', icon: '📈', label: '캠페인 운영 현황' },
-  { to: '/campaigns', icon: '📋', label: '캠페인 목록' },
-  { to: '/recommend', icon: '💡', label: '캠페인 추천' },
+  { to: '/campaigns', icon: '📋', label: '캠페인 관리' },
   { to: '/monitoring', icon: '🔍', label: '캠페인 모니터링' },
   { to: '/analytics', icon: '📊', label: '캠페인 성과 분석' },
+  { to: '/recommend', icon: '💡', label: '캠페인 추천' },
   { to: '/segments', icon: '🎯', label: '세그먼트 관리' },
   { to: '/templates', icon: '📝', label: '템플릿 관리' },
   { to: '/settings', icon: '⚙️', label: '설정 관리' },
@@ -56,21 +56,29 @@ const menuItems = [
   box-sizing: border-box;
 }
 
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   background-color: #f8f9fa;
   color: #333;
+  font-size: 14px;
+  -webkit-text-size-adjust: 100%;
 }
 
 #app {
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
 }
 
 .app-shell {
   display: flex;
-  height: 100vh;
+  height: 100%;
 }
 
 /* Sidebar */
@@ -80,6 +88,7 @@ body {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  overflow-y: auto;
 }
 
 .sidebar-logo {

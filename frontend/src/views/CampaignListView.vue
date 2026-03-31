@@ -23,6 +23,24 @@
         </div>
         <h3 class="card-name">{{ c.name }}</h3>
         <p class="card-desc">{{ c.description || '설명 없음' }}</p>
+        <div v-if="c.status !== 'DRAFT'" class="card-sim">
+          <div class="sim-row">
+            <span class="sim-label">예상 대상</span>
+            <span class="sim-value">{{ formatSim(getSimData(c.id).target) }}명</span>
+          </div>
+          <div class="sim-row">
+            <span class="sim-label">예상 발송</span>
+            <span class="sim-value sent">{{ formatSim(getSimData(c.id).sent) }}건</span>
+          </div>
+          <div class="sim-bar-wrap">
+            <div class="sim-bar success" :style="{ width: getSimData(c.id).successRate + '%' }"></div>
+            <div class="sim-bar fail" :style="{ width: (100 - getSimData(c.id).successRate) + '%' }"></div>
+          </div>
+          <div class="sim-row">
+            <span class="sim-label-sm">성공 {{ getSimData(c.id).successRate }}%</span>
+            <span class="sim-label-sm fail-text">실패 {{ (100 - getSimData(c.id).successRate).toFixed(1) }}%</span>
+          </div>
+        </div>
         <div class="card-meta">
           <span>{{ formatDate(c.updatedAt) }}</span>
         </div>
@@ -76,6 +94,28 @@ function statusLabel(status: CampaignStatus): string {
 
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('ko-KR')
+}
+
+function seededRandom(seed: number) {
+  let s = seed
+  return () => {
+    s = (s * 16807 + 0) % 2147483647
+    return s / 2147483647
+  }
+}
+
+function getSimData(id: number) {
+  const rand = seededRandom(id * 71 + 13)
+  const target = Math.round(rand() * 400000 + 50000)
+  const sentRate = 0.85 + rand() * 0.13
+  const sent = Math.round(target * sentRate)
+  const successRate = +(88 + rand() * 8).toFixed(1)
+  return { target, sent, successRate }
+}
+
+function formatSim(n: number) {
+  if (n >= 10000) return (n / 10000).toFixed(1) + '만'
+  return n.toLocaleString('ko-KR')
 }
 </script>
 
@@ -216,6 +256,69 @@ function formatDate(dateStr: string): string {
   font-size: 13px;
   color: #6b7280;
   margin: 0 0 12px;
+}
+
+.card-sim {
+  background: #faf5ff;
+  border: 1px solid #ede9fe;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sim-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sim-label {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.sim-value {
+  font-size: 12px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.sim-value.sent {
+  color: #7c3aed;
+}
+
+.sim-bar-wrap {
+  display: flex;
+  height: 6px;
+  border-radius: 3px;
+  overflow: hidden;
+  background: #f3f4f6;
+}
+
+.sim-bar {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.sim-bar.success {
+  background: #34d399;
+}
+
+.sim-bar.fail {
+  background: #f87171;
+}
+
+.sim-label-sm {
+  font-size: 10px;
+  color: #059669;
+  font-weight: 600;
+}
+
+.sim-label-sm.fail-text {
+  color: #ef4444;
 }
 
 .card-meta {

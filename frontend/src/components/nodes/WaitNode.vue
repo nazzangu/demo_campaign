@@ -11,6 +11,7 @@
       </div>
       <div v-else class="warning">설정을 완료해주세요</div>
     </div>
+    <div v-if="data.simCount !== undefined" class="sim-badge">{{ formatSim(data.simCount) }}명</div>
     <Handle type="source" :position="Position.Bottom" />
   </div>
 </template>
@@ -18,9 +19,14 @@
 <script setup lang="ts">
 import { Handle, Position } from '@vue-flow/core'
 
-defineProps<{
+const props = defineProps<{
   data: any
 }>()
+
+function formatSim(n: number) {
+  if (n >= 10000) return (n / 10000).toFixed(1) + '만'
+  return n.toLocaleString('ko-KR')
+}
 
 function unitLabel(unit: string): string {
   switch (unit) {
@@ -34,13 +40,28 @@ function unitLabel(unit: string): string {
 
 <style scoped>
 .wait-node {
+  position: relative;
   background: #fff;
   border: 1px solid #fcd34d;
   border-left: 4px solid #f59e0b;
   border-radius: 12px;
   width: 250px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  overflow: hidden;
+  overflow: visible;
+}
+
+.sim-badge {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background: #7c3aed;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(124, 58, 237, 0.3);
 }
 
 .node-header {

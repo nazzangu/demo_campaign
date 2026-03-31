@@ -3,7 +3,18 @@
     <Handle type="target" :position="Position.Top" />
     <div class="node-header" :style="{ background: nodeColor + '15', color: nodeColor }">
       <span class="node-icon">{{ data.config?.rewardType === 'POINT' ? '💰' : '🎟️' }}</span>
-      <span class="node-title">{{ data.label }}</span>
+      <input
+        v-if="editing"
+        ref="editInput"
+        class="node-title-input"
+        :value="data.label"
+        @blur="finishEdit($event)"
+        @keyup.enter="($event.target as HTMLInputElement).blur()"
+        @keyup.escape="editing = false"
+        @click.stop
+        @mousedown.stop
+      />
+      <span v-else class="node-title" @dblclick.stop="startEdit">{{ data.label }}</span>
       <div class="menu-wrapper">
         <button class="menu-btn" @click.stop="showMenu = !showMenu">⋮</button>
         <div v-if="showMenu" class="dropdown-menu">
@@ -20,17 +31,33 @@
         <div class="reward-value">{{ data.config.value }}</div>
       </div>
     </div>
+    <div v-if="data.simCount !== undefined" class="sim-badge">{{ formatSim(data.simCount) }}명</div>
     <Handle type="source" :position="Position.Bottom" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { Handle, Position, useNode } from '@vue-flow/core'
 
 const { id } = useNode()
 
 const showMenu = ref(false)
+const editing = ref(false)
+const editInput = ref<HTMLInputElement | null>(null)
+
+function startEdit() {
+  editing.value = true
+  nextTick(() => editInput.value?.select())
+}
+
+function finishEdit(e: FocusEvent) {
+  const val = (e.target as HTMLInputElement).value.trim()
+  editing.value = false
+  if (val && val !== props.data.label) {
+    window.dispatchEvent(new CustomEvent('flow-rename-node', { detail: { nodeId: id, label: val } }))
+  }
+}
 
 function handleDelete() {
   showMenu.value = false
@@ -44,23 +71,43 @@ function closeMenu() {
 onMounted(() => document.addEventListener('click', closeMenu))
 onBeforeUnmount(() => document.removeEventListener('click', closeMenu))
 
-defineProps<{
+const props = defineProps<{
   type: string
   data: any
 }>()
+
+function formatSim(n: number) {
+  if (n >= 10000) return (n / 10000).toFixed(1) + '만'
+  return n.toLocaleString('ko-KR')
+}
 
 const nodeColor = computed(() => '#E67E22')
 </script>
 
 <style scoped>
 .reward-node {
+  position: relative;
   background: #fff;
   border: 1px solid #e5e7eb;
   border-left: 4px solid;
   border-radius: 12px;
   width: 250px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  overflow: hidden;
+  overflow: visible;
+}
+
+.sim-badge {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background: #7c3aed;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(124, 58, 237, 0.3);
 }
 
 .node-header {
@@ -89,6 +136,9 @@ const nodeColor = computed(() => '#E67E22')
 .menu-btn:hover {
   opacity: 1;
 }
+
+.node-title { cursor: default; }
+.node-title-input { background: rgba(255,255,255,0.8); border: 1px solid currentColor; border-radius: 4px; padding: 1px 4px; font-size: inherit; font-weight: inherit; color: inherit; width: 100%; min-width: 0; outline: none; }
 
 .dropdown-menu {
   position: absolute;
